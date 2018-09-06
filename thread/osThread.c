@@ -9,9 +9,11 @@ static long sum = 0;
 static long count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+const static char *fileInput = "input.txt";
+const static char *fileOutput = "output.txt";
 
 void getInput() {
-    FILE *pFile = fopen("input.txt", "r");
+    FILE *pFile = fopen(fileInput, "r");
     char line[20];
     if (pFile == NULL) {
         perror("Error opening file");
@@ -30,7 +32,7 @@ void getInput() {
 }
 
 void setOutput() {
-    FILE *pFile = fopen("output.txt", "w");
+    FILE *pFile = fopen(fileOutput, "w");
     if (pFile == NULL) {
         perror("Error opening file");
     } else {
@@ -42,10 +44,9 @@ void setOutput() {
 void threadSum() {
     while (count <= M) {
         pthread_mutex_lock(&mutex);
-        sum += count;
-        count++;
-        pthread_mutex_unlock(&mutex);
+        sum += count++;
         printf("the thread result = %ld\n", sum);
+        pthread_mutex_unlock(&mutex);
     }
 }
 

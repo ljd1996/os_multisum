@@ -1,20 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
-// #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
+#include <semaphore.h>
+
+#define PERM S_IRUSR|S_IWUSR
 
 static int N = 0;
 static long M = 0;
-// static long sum = 0;
-static long count = 0;
-// static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+const static char *fileInput = "input.txt";
+const static char *fileOutput = "output.txt";
+
+typedef struct {
+    long sum;
+    long count;
+    sem_t S;
+} Process;
 
 void getInput() {
-    FILE *pFile = fopen("input.txt", "r");
+    FILE *pFile = fopen(fileInput, "r");
     char line[20];
     if (pFile == NULL) {
         perror("Error opening file");
@@ -32,15 +40,15 @@ void getInput() {
     }
 }
 
-// void setOutput() {
-//     FILE *pFile = fopen("output.txt", "w");
-//     if (pFile == NULL) {
-//         perror("Error opening file");
-//     } else {
-//         fprintf(pFile,"%ld", sum);
-//         fclose(pFile);
-//     }
-// }
+void setOutput(long result) {
+    FILE *pFile = fopen(fileOutput, "w");
+    if (pFile == NULL) {
+        perror("Error opening file");
+    } else {
+        fprintf(pFile,"%ld", result);
+        fclose(pFile);
+    }
+}
 
 int main(int argc, char const *argv[]) {
     clock_t start = clock();
@@ -50,35 +58,48 @@ int main(int argc, char const *argv[]) {
     printf("N = %d\n", N);
     printf("M = %ld\n", M);
 
-    pid_t pid;
-    int status = 0;
+    int shm_id;
+    Process *pProcess;
 
-    // shmget(0, sizeof(long), IPC_PRIVATE);
-    long *sum = (long *)shmat(shmget(IPC_PRIVATE, sizeof(long), IPC_CREAT), NULL, 0);
-
-    pid =fork();
-
-    if(pid < 0) {
-        perror("fork fail");
+    if((shm_id = shmget(IPC_PRIVATE, sizeof(Process), PERM)) == -1){  
+        printf("Create Share Memory Error.\n");
         return -1;
     }
 
-    if(pid > 0) {
-        wait(&status);
-        // setOutput();
+    pProcess = (Process *)shmat(shm_id, NULL, 0);
+    pProcess->sum = 0;
+    pProcess->count = 0;
 
-        // printf("the final result = %ld\n", *sum);
-        // printf("the tatol time = %ld\n", clock()-start);
+    sem_init(&pProcess->S, 0, 1);
+
+    pid_t pid;
+    int status;
+
+    for (int i = 0; i < N; i++) {
+        pid =fork();
+        if (pid == 0 || pid == -1) {
+            break;
+        }
+    }
+
+    if(pid==-1) {
+        printf("fail to fork!\n");
+        return -1;
+    } else if(pid == 0) {
+        while (pProcess->count <= M) {
+            sem_wait(&pProcess->S);
+            pProcess->sum += pProcess->count++;
+            printf("the process result = %ld\n", pProcess->sum);
+            sem_post(&pProcess->S);
+        }
     } else {
-        // while (count <= M) {
-            // pthread_mutex_lock(&mutex);
-            // sum += count;
-            // count++;
-            // pthread_mutex_unlock(&mutex);
-            printf("the threa\n");
-            *sum = 10;
-            printf("the thread result = %ld\n", *sum);
-        // }
+        wait(&status);
+
+        sem_destroy(&pProcess->S);
+        setOutput(pProcess->sum);
+
+        printf("the final result = %ld\n", pProcess->sum);
+        printf("the tatol time = %ld\n", clock()-start);
     }
 
     return 0;
