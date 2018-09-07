@@ -88,8 +88,9 @@ int main(int argc, char const *argv[]) {
     } else if(pid == 0) {
         while (pProcess->count <= M) {
             sem_wait(&pProcess->S);
-            pProcess->sum += pProcess->count++;
-            printf("the process result = %ld\n", pProcess->sum);
+            if (pProcess->count <= M) {
+                pProcess->sum += pProcess->count++;
+            }
             sem_post(&pProcess->S);
         }
     } else {

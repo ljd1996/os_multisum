@@ -44,8 +44,9 @@ void setOutput() {
 void threadSum() {
     while (count <= M) {
         pthread_mutex_lock(&mutex);
-        sum += count++;
-        printf("the thread result = %ld\n", sum);
+        if (count <= M) {
+            sum += count++;
+        }
         pthread_mutex_unlock(&mutex);
     }
 }
