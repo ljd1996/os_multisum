@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <time.h>
+#include <sys/time.h>
 
 static int N = 0;
 static long M = 0;
@@ -52,12 +52,24 @@ void threadSum() {
 }
 
 int main(int argc, char const *argv[]) {
-    clock_t start = clock();
-    
     getInput();
 
     printf("N = %d\n", N);
     printf("M = %ld\n", M);
+
+    if (N < 1 || N >= 100) {
+        printf("N is behind 1 and 100.\n");
+        return -1;
+    }
+
+    if (M < 0 || M >= 4294967296) {
+        printf("M is behind 0 and 4294967296.\n");
+        return -1;
+    }
+
+    struct timeval start;
+    struct timeval end;
+    gettimeofday(&start, NULL);
 
     int ret;
     pthread_t thread[N];
@@ -74,10 +86,12 @@ int main(int argc, char const *argv[]) {
         pthread_join(thread[i], NULL);
     }
     
-    setOutput();
-
     printf("the final result = %ld\n", sum);
-    printf("the tatol time = %ld\n", clock()-start);
+
+    gettimeofday(&end, NULL);
+    printf("the tatol time = %ld us\n", 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec);
+
+    setOutput();
 
     return 0;
 }

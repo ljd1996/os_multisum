@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
@@ -50,13 +50,25 @@ void setOutput(long result) {
     }
 }
 
-int main(int argc, char const *argv[]) {
-    clock_t start = clock();
-    
+int main(int argc, char const *argv[]) {    
     getInput();
 
     printf("N = %d\n", N);
     printf("M = %ld\n", M);
+
+    if (N < 1 || N >= 100) {
+        printf("N is behind 1 and 100.\n");
+        return -1;
+    }
+
+    if (M < 0 || M >= 4294967296) {
+        printf("M is behind 0 and 4294967296.\n");
+        return -1;
+    }
+
+    struct timeval start;
+    struct timeval end;
+    gettimeofday(&start, NULL);
 
     int shm_id;
     Process *pProcess;
@@ -97,10 +109,12 @@ int main(int argc, char const *argv[]) {
         wait(&status);
 
         sem_destroy(&pProcess->S);
-        setOutput(pProcess->sum);
 
         printf("the final result = %ld\n", pProcess->sum);
-        printf("the tatol time = %ld\n", clock()-start);
+        gettimeofday(&end, NULL);
+        printf("the tatol time = %ld us\n", 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec);
+        
+        setOutput(pProcess->sum);
     }
 
     return 0;
