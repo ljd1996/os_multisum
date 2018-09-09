@@ -1,4 +1,5 @@
 # encoding=utf-8
+
 from pylab import *
 from ctypes import *
 import os
@@ -14,7 +15,7 @@ line = [[1, 10, 100, 1000],
 
 main = "./multisum"
 
-l = 100000000
+l = 4294967296
 
 for v in x:
     f = os.popen(main + " " + str(v) + " " + str(l))

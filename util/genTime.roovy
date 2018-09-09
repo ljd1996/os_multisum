@@ -1,0 +1,10 @@
+#!/home/hearing/Software/groovy-2.5.1/bin/groovy
+
+
+def x = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+for (i in x) {
+	command = "./multisum " + i + " " + "4294967296"
+	def proc = command.execute()
+	proc.waitFor()
+	print "${proc.in.text}, "
+}
